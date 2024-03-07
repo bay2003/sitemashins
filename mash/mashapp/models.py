@@ -71,8 +71,12 @@ class Create(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     tags = models.ManyToManyField(Tag)
     image = models.ImageField(upload_to='create_images/', null=True, blank=True)
-
     def __str__(self):
         return self.name
 
+    def has_image(self):
+        return self.image is not None
+
+    def some_methods(self):
+        return "hello world"
 

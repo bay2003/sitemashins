@@ -141,3 +141,5 @@ AUTH_USER_MODEL = 'usersapp.BlogUser'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/users/login/'
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'

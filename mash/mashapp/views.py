@@ -13,8 +13,10 @@ from django.http import Http404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import UserPassesTestMixin
 
+
 def index(request):
-    return render(request, 'mashapp/index.html')
+    posts = Post.objects.all()  # Retrieve all posts
+    return render(request, 'mashapp/index.html', {'posts': posts})
 
 def contact(request):
     return render(request, 'mashapp/contact.html')
@@ -174,4 +176,6 @@ class TagDeleteView(UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('tag_list')
     def test_func(self):
         return self.request.user.is_superuser
+
+
 
