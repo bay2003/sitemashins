@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
+
 {% block content %}
 <main class="flex-shrink-0">
     <!-- Header-->
@@ -17,34 +18,62 @@
             </div>
         </div>
     </header>
+
     <!-- Post links -->
        <div class="container">
-        <div class="row">
-            <div class="col">
-                <h2 class="fw-bolder mb-5">Список постов:</h2>
-                <ul>
-                    {% for post in posts %}
-                        <li><a class="fw-bolder mb-5" href="{{ post.get_absolute_url }}"> :--) {{ post.title }}
-                            <p>{% if item.has_image %}
-                            Есть картинка
-                        {% else %}
-                            Нет картинки
-
+    <div class="row">
+        <div class="col">
+            Количество постов: {{ posts|length }}
+            <h2 class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder">Список постов:</h2>
+            <ul>
+                {% for post in posts %}
+                    <li>
+                        <a class="fw-bolder mb-5" href="{{ post.get_absolute_url }}"> :--) {{ post.title }}</a>
+                        <p>
+                            {% if post.has_image %}
+                                Есть картинка
+                            {% else %}
+                                Нет картинки
                             {% endif %}
-                            {{item.has_image}}
-                                {{item.some_method}}</p>
-                        </a></li>
-                    {% endfor %}
-                </ul>
+                            {{ post.has_image }}
+                            {{ post.some_method }}
+                        </p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+    <div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="pagination">
+                <span class="step-links">
+                    {% if posts.has_previous %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ posts.previous_page_number }}">Предыдущая страница</a>
+                    {% endif %}
+                </span>
+                <span class="current">
+                    <h3>Страница {{ posts.number }} из {{ posts.paginator.num_pages }}.</h3>
+                </span>
+                <span class="step-links">
+                    {% if posts.has_next %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ posts.next_page_number }}">Следующая страница</a>
+                    {% endif %}
+                </span>
             </div>
         </div>
     </div>
+</div>
+
+
                             <!-- Header profile picture-->
                             <div class="d-flex justify-content-center mt-5 mt-xxl-0">
                                 <div class="profile bg-gradient-primary-to-secondary">
                                     <!-- TIP: For best results, use a photo with a transparent background like the demo example below-->
                                     <!-- Watch a tutorial on how to do this on YouTube (link)-->
-                                    <img class="profile-img" src="../../../../../../Downloads/startbootstrap-personal-gh-pages/startbootstrap-personal-gh-pages/assets/profile.png" alt="..." />
+                                    <img class="profile-img" src=""{% static 'assets/profile.png' '%}" />
                                     <div class="dots-1">
                                         <!-- SVG Dots-->
                                         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 191.6 1215.4" style="enable-background: new 0 0 191.6 1215.4" xml:space="preserve">

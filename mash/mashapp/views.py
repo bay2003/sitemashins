@@ -3,7 +3,7 @@ from django.views.generic import TemplateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from django.views.generic.base import ContextMixin
-from .models import Project
+from .models import Project, Category
 from django.template.loader import get_template
 from django.http import HttpResponse, HttpResponseRedirect
 import json
@@ -12,25 +12,40 @@ from django.http import JsonResponse
 from django.http import Http404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import UserPassesTestMixin
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def index(request):
-    posts = Post.objects.all()  # Retrieve all posts
-    return render(request, 'mashapp/index.html', {'posts': posts})
+    posts = Create.active_objects.all()
+    paginator = Paginator(posts, 1)  # Показывать по 2 поста на странице
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+
+    title = 'Главная страница'
+    return render(request, 'mashapp/index.html', {'posts': posts, 'title': title})
+
 
 def contact(request):
-    return render(request, 'mashapp/contact.html')
+    title = "Контакты"
+    return render(request, 'mashapp/contact.html', context={'title': title})
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def projects(request):
     return render(request, 'mashapp/projects.html')
 
 def resume(request):
-    return render(request, 'mashapp/resume.html')
+    title = "Информация"
+    return render(request, 'mashapp/resume.html', context={'title': title})
 
 def project_list(request):
+    title = "Проекты"
     projects = Project.objects.all()
-    return render(request, 'project_list.html', {'projects': projects})
+    return render(request, 'project_list.html', {'projects': projects, 'title': title})
 
 def project_detail(request, project_id):
     project = Project.objects.get(id=project_id)
@@ -92,7 +107,7 @@ from .models import Page, Post
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from .models import Tag, Create
-from .forms import MashForm
+from .forms import MashForm, PostCategoryForm
 
 
 @login_required
@@ -136,9 +151,10 @@ class TagListView(ListView, NameContextMixin):
     model = Tag
     template_name = 'tag_list.html'
     context_object_name = 'tags'
+    paginate_by = 1
 
     def get_queryset(self):
-        return Tag.objects.all()
+        return Tag.active_objects.all()
 
 class TagDetailView(UserPassesTestMixin, DetailView, NameContextMixin):
     model = Tag
@@ -177,5 +193,50 @@ class TagDeleteView(UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.is_superuser
 
+
+from .forms import ContactForm
+
+
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            # Здесь вы можете обработать валидные данные формы
+            # Например, отправить email или сохранить данные в базу данных
+            return HttpResponseRedirect('/resume/')  # Перенаправление после успешной обработки
+    else:
+        form = ContactForm()
+    return render(request, 'mashapp/contactform.html', {'form': form})
+
+class CategoryDetailView(DetailView):
+    template_name = 'mashapp/category_detail.html'
+    model = Category
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context ['form'] = PostCategoryForm()
+        return context
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+
+class PostCategoryCreateView(CreateView):
+    model = Create
+    template_name = 'category_detail.html'
+    success_url = '/'
+    form_class = PostCategoryForm
+
+    def post(self, request, *args, **kwargs):
+        self.category_pk = kwargs['pk']
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        user = self.request.user
+        form.instance.user = user
+        category = get_object_or_404(Category, pk=self.category_pk)
+        form.instance.category = category
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('category_detail', kwargs={'pk': self.category_pk})
 
 

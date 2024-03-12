@@ -1,7 +1,23 @@
 from django.db import models
-from usersapp.models import BlogUser
 from django.conf import settings
 from usersapp.models import BlogUser
+
+
+class AcriveManager(models.Manager):
+    def get_queryset(self):
+        all_objects = super().get_queryset()
+        return all_objects.filter(is_active=True)
+class IsActiveMixin(models.Model):
+    is_active = models.BooleanField(default=False)
+    objects = models.Manager()
+    active_objects = AcriveManager()
+    class Meta:
+        abstract = True
+
+# class UpdatedObjectsManager(models.Manager):
+#     def get_queryset(self):
+#         all_objects = super().get_queryset()
+#         return all_objects.filter(is_active=True)
 
 class TimeStamp (models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -23,7 +39,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-class Tag(models.Model):
+class Tag(IsActiveMixin):
+    objects = models.Manager()
+    active_objects = AcriveManager()
     name = models.CharField(max_length=50)
 
     def __str__(self):
@@ -47,6 +65,7 @@ class Post(models.Model):
     content = models.TextField()
     image = models.ImageField(upload_to='post_images/', null=True, blank=True)
 
+
     def get_absolute_url(self):
         return reverse('view_post', args=[str(self.id)])
 
@@ -63,20 +82,25 @@ class Cer(CoreObject):
 class Toy(CoreObject):
     text = models.TextField()
 
+
 class Create(models.Model):
+    objects = models.Manager()
+    active_objects = AcriveManager()
     name = models.CharField(max_length=32, unique=True)
     text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_posts')
     tags = models.ManyToManyField(Tag)
-    image = models.ImageField(upload_to='create_images/', null=True, blank=True)
+    image = models.ImageField(upload_to='post_images/', null=True, blank=True)
+    user = models.ForeignKey(BlogUser, on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+
     def __str__(self):
         return self.name
 
     def has_image(self):
-        return self.image is not None
+        return bool(self.image)
 
-    def some_methods(self):
+    def some_method(self):
         return "hello world"
 

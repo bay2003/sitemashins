@@ -18,5 +18,9 @@ urlpatterns = [
     path('tag-create/', views.TagCreateView.as_view(), name='tag_create'),
     path('tag-update/<int:pk>/', views.TagUpdateView.as_view(), name='tag_update'),
     path('tag-delete/<int:pk>/', views.TagDeleteView.as_view(), name='tag_delete'),
+    path('contactform/', views.contact_view, name='contactform'),
+    path('category-detail/<int:pk>/', views.CategoryDetailView.as_view(), name='category_detail'),
+    path('post-category-create/<int:pk>', views.PostCategoryCreateView.as_view(), name='post-category-create')
+
     ]
 
