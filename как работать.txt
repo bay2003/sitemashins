@@ -1,0 +1,498 @@
+Сначала прописываем в виев
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+def index(request):
+    posts = Post.objects.all()
+    paginator = Paginator(posts, 1)  # Показывать по 2 поста на странице
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'mashapp/index.html', {'posts': posts})
+
+    Здесь мы прописали функцию для постов, для создания страниц и выдаче постов /?page=1 2 3 и т.д.
+    цифра в код кол-во постов на экране
+
+class TagListView(ListView, NameContextMixin):
+    model = Tag
+    template_name = 'tag_list.html'
+    context_object_name = 'tags'
+    paginate_by = 2
+    Здесь прописываем так же кол-во тэгов на странице
+
+
+Это прописываем в html index для отображения страниц с поставми, т.е. если на странице настроили отображение 2 постов, а их 4 то можно перейти на следующую
+       <div class="pagination">
+    <span class="step-links">
+        {% if posts.has_previous %}
+            <a href="?page={{ posts.previous_page_number }}">Предыдущая страница</a>
+        {% endif %}
+    </span>
+    <span class="current">
+        Страница {{ posts.number }} из {{ posts.paginator.num_pages }}.
+    </span>
+    <span class="step-links">
+        {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}">Следующая страница</a>
+        {% endif %}
+    </span>
+</div>
+
+
+Что бы с красотой :-)
+    <div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="pagination">
+                <span class="step-links">
+                    {% if posts.has_previous %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ posts.previous_page_number }}">Предыдущая страница</a>
+                    {% endif %}
+                </span>
+                <span class="current">
+                    <h3>Страница {{ posts.number }} из {{ posts.paginator.num_pages }}.</h3>
+                </span>
+                <span class="step-links">
+                    {% if posts.has_next %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ posts.next_page_number }}">Следующая страница</a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+Так же можно и на тэгах сделать перелисты страницы, но  с отличаем т.к. метод вызова другой листвью разные методы
+        <div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ page_obj.previous_page_number }}">Предыдущая страница</a>
+                    {% endif %}
+                </span>
+                <span class="current">
+                    <h3>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.</h3>
+                </span>
+                <span class="step-links">
+                    {% if page_obj.has_next %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ page_obj.next_page_number }}">Следующая страница</a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ШАБЛОНЫ И ФИЛЬТРЫ
+
+меняем в базовом шалоне
+<a class="navbar-brand" href="{% url 'index' %}"><span class="fw-bolder text-primary">{{title|title}}</span></a> что бы писал с большой буквы
+т.е. меняем огловление сверху слева
+
+Затем на каждой странице в виев прописываем что значит title
+    title = 'Главная'
+    return render(request, 'mashapp/index.html', {'posts': posts, 'title': title})
+
+    def contact(request):
+    title = "Контакты"
+    return render(request, 'mashapp/contact.html', context={'title': title})
+
+Фильтры
+
+Меняем в html index
+<div class="container">
+    <div class="row">
+        <div class="col">
+            Количество постов: {{ posts|length }} т.е. мы показали сколько постов на странице
+
+ФИЛЬТР SAFE
+
+что бы встроить видео нужно зайти на утуб нажать поделиться, встрить и скачать разметку - пример
+<iframe width="560" height="315" src="https://www.youtube.com/embed/flzZgAEM0_Y?si=Zik2RHU3l-bQacm8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+вставляем в текст поста и сохраняем
+далее в postdetail хтмл меняем текст добавлением |safe такую штуку
+<p>{{ post.content|safe }}</p>
+Это дает показать видео
+
+
+ФИЛЬТРЫ ОТДЕЛЬНЫМ ПРИЛОЖЕНИЕМ
+
+python manage.py startapp capapp
+пишем в терминале новый проект название любое
+
+Создаем в новом проект папку templatetags
+
+создаем в папку новый файл str_extensions.py
+from django import template
+register = template.Library()
+
+def capitalize(inputstr):
+    return inputstr.capitalize()
+
+
+register.filter('capitalize', capitalize)
+
+затем идем в базовый шаблон и туда прописываем
+
+{% load str_extensions %}
+сверху где все загрузки
+
+Дальше в базе так же меняем
+
+<a class="navbar-brand" href="{% url 'index' %}"><span class="fw-bolder text-primary">{{title|capitalize}}</span></a>
+Т.е. мы из новой модели capapp взяли систему капитализе
+
+Дальше регистрируем в settings capapp
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'mashapp', 'usersapp', 'capapp',]
+
+    Ну и запускаем сайт
+
+
+Еще 1 фильтр
+def superoutput(inputstr):
+    result = []
+    for i in range(len(inputstr)): по сути в рандом большие и маленькие буквы
+        letter = inputstr[i]
+        if i%2 != 0:
+            letter = letter.upper()
+        result.append(letter)
+    return ''.join(result)
+
+register.filter('superoutput', superoutput) обязательно регистрировать
+
+Ну и еще прописанный иначе
+def nexta(inputstr):
+        return ''.join([inputstr[i].upper() if i % 2 == 0 else inputstr[i] for i in range(len(inputstr))])
+
+
+АКТИВАЦИИ
+
+ЧТО БЫ ВИДЕТЬ ИЛИ НЕТ ПОСТЫ И Т.Д.
+НУЖНО ПРОПИСАТЬ
+
+class Create(models.Model):
+    name = models.CharField(max_length=32, unique=True)
+    text = models.TextField()
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    tags = models.ManyToManyField(Tag)
+    image = models.ImageField(upload_to='post_images/', null=True, blank=True)
+    user = models.ForeignKey(BlogUser, on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=False) ПРОПИСЫВАЕМ В МОДЕЛИ
+
+    ДАЛЬШЕ ВСЕ МИГРАЦИИ
+
+
+    ПОТОМ ПЕРЕХОДИМ В АДМИН И
+    def set_active(modeladmin, request, queryset): СОЗДАЕМ ВОЗМОЖНОСТЬ
+    queryset.update(is_active=True)
+class CreateAdmin(admin.ModelAdmin):
+    list_display = ['name', 'text', 'category', 'image', 'display_tags', 'has_image', 'rating', 'is_active']
+    actions = ['clear_rating', set_active] ПРОПИСЫВАЕМ ГАЛОЧКУ
+    # Отображаемые поля в админке
+
+    Что бы так же активировать тэги
+class IsActiveMixin(models.Model):
+    is_active = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+
+        и в самом классе тэгов добавляем миксины
+        class Tag(models.Model, IsActiveMixin):
+
+ Ну и как обычно, если делаем изменения в моделях макемиграция и миграция
+
+ Прописываем в админ панели
+
+ def set_active(modeladmin, request, queryset): это модуль активации, что бы можно было выделить все данные сверху как и удалить
+    queryset.update(is_active=True)
+set_active.short_description = "Активировать выбранные посты"
+
+class CreateAdmin(admin.ModelAdmin): здесь мы настравиваем что можно делать с create в том числе активации
+    list_display = ['name', 'text', 'category', 'image', 'has_image', 'is_active']
+    actions = ['clear_rating', set_active]
+    # Отображаемые поля в админке
+
+admin.site.register(Project)  Это активация в панели
+admin.site.register(Category) Это активация в панели
+admin.site.register(Page) Это активация в панели
+admin.site.register(Post) Это активация в панели
+admin.site.register(Create, CreateAdmin) Это активация в панели
+
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'is_active']
+    actions = [set_active]
+
+admin.site.register(Tag, TagAdmin) Это активация в панели
+
+В виев ставим ограничения что бы на начальной странице показывали только активные
+def index(request):
+    posts = Create.objects.filter(is_active=True)
+так же и для тэгов
+class TagListView(ListView, NameContextMixin):
+    model = Tag
+    template_name = 'tag_list.html'
+    context_object_name = 'tags'
+    paginate_by = 1
+
+    def get_queryset(self):
+        return Tag.objects.filter(is_active=True)
+
+
+ ЕСТЬ СПЕЦИАЛЬНЫЙ МЕНЕДЖЕР КОТОРЫЙ ПОМОГАЕТ ДЕЛАТЬ ОГРАНИЧЕНИЯ ДЛЯ ПРОСОМТРА
+
+
+
+class AcriveManager(models.Manager): создания класс который можеть активировать все данные
+    def get_query_set(self):
+        all_objects = super().get_query_set() т.е. все данные
+        return all_objects.filter(is_acrive=True)
+class Create(models.Model): вкручиваем в креате модуль, что бы можно было все данные активировать или нет
+    objects = models.Manager() ссылка на библиотеку
+    active_objects = AcriveManager() ссылка на класс выше
+
+
+
+Дальше идем в виев и на центрально странице можем спокойно ссылать на новый класс
+
+
+def index(request):
+    posts = Create.active_objects.all()
+
+Ну и снова маке и миграции
+
+ну или проще задача в самом начале моделей
+class AcriveManager(models.Manager): т.е. тот же класс
+    def get_queryset(self):
+        all_objects = super().get_queryset()
+        return all_objects.filter(is_active=True)
+class IsActiveMixin(models.Model): прописываем в миксины, т.к. это абстрактный класс
+    is_active = models.BooleanField(default=False) тоже самое что в моделях писали
+    objects = models.Manager() тоже самое что в моделях писали
+    active_objects = AcriveManager()
+
+
+
+ДЕЛАЕМ ДЛЯ ПОЛЬЗОВАТЕЛЯ ДОПОЛНИТЕЛЬНЫЕ ДАННЫЕ USERAPP MODELS
+class Profile(models.Model):
+    info = models.TextField(blank=True) это его информация о себе
+    user = models.OneToOneField(BlogUser, on_delete=models.CASCADE)
+
+    как обычно после делаем миграции маке и мигр
+
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class BlogUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    is_author = models.BooleanField(default=False)  # Исправил опечатку в названии поля
+    def save(self, *args, **kwargs):
+            super().save(*args, **kwargs)  # Вызываем сначала родительский метод сохранения
+            if not Profile.objects.filter(user=self).exists():
+                Profile.objects.get_or_create(user=self)  # Используем get_or_create для создания профиля пользователя
+
+
+class Profile(models.Model):
+    info = models.TextField(blank=True)
+    user = models.OneToOneField(BlogUser, on_delete=models.CASCADE)
+
+
+    ВАРИАНТ СИГНАЛОВ ТАК ЖЕ СОЗДАНИЕ И СОХРАНЕНИЕ ЮЗЕРОВ
+так же в моделях юзерапп
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+# @receiver(post_save, sender=BlogUser)
+# def create_profile(sender, instance, **kwargs):
+#     if not Profile.objects.filter(user=instance).exists():
+#         Profile.objects.create(user=instance)
+
+
+Теперь в базовый шаблон можем вносить изменения
+Т.е. если мы меняем в базовой
+<div class="col-auto"><div class="small m-0">{{joke}}</div></div> - это связь с виеви, допустим на главной поменяли ее значения
+
+def index(request):
+    posts = Create.active_objects.all()
+    paginator = Paginator(posts, 1)  # Показывать по 2 поста на странице
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+
+    title = 'Главная страница'
+    joke = 'Ехал грека через реку' прописываем значения
+    return render(request, 'mashapp/index.html', {'posts': posts, 'title': title, 'joke': joke}) и прописываем в модулях
+
+что бы значения были на всех страницах одинаковые
+Создаем файл context_processors.py в директорию mash app
+
+туда как пример
+import requests
+def get_joke(request):
+    return {'joke': 'Ехали цыгане не догонишь'}
+
+Затем заходим в setting общий mash и прописываем настройку нового файла 'mashapp.context_processors.get_joke', т.е. директория файл и названия def
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'mashapp' / 'templates'],  # Указание пути к шаблонам в твоем приложении
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'mashapp.context_processors.get_joke',
+
+
+ Теперь смело можем убирать из views  index html названия
+    joke = 'Ехал грека через реку'
+
+
+
+ЕСЛИ МЫ ХОТИМ ВИДЕТЬ ВСЕ КАТЕГОРИИ ПРОПИСЫВАЕМ ВО ВЬЮХЕ
+class CategoryDetailView(DetailView):
+    template_name = 'mashapp/category_detail.html'
+    model = Category
+
+    ДАЛЬШЕ УХОДИМ В УРЛ МАШАПП
+    path('category-detail/<int:pk>/', views.CategoryDetailView.as_view(), name='category_detail')
+
+
+Создаем  html в темп машапп category_detail.html
+
+{% extends 'base.html' %}
+{% block title %}
+
+{% endblock %}
+
+{% block content %}
+    <h1>{{ object.name }}</h1>
+    <h1>Тег: {{ tags }}</h1>
+    <p>Дополнительная информация о теге здесь...</p>
+{% endblock %}
+
+Если мы хотим в постах что бы работала, нужно в модели внести изменения
+
+class Create(models.Model):
+    objects = models.Manager()
+    active_objects = AcriveManager()
+    name = models.CharField(max_length=32, unique=True)
+    text = models.TextField()
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_posts') здес мы добавили направления к категоряим
+
+    Далее маке и миграт
+
+    Возвращаемся в category_detail.html
+    {% extends 'base.html' %}
+{% block title %}
+
+{% endblock %}
+
+{% block content %}
+    <h1>{{ object.name }}</h1>
+    {% for post in object.category_posts.all %}
+    {{ post.name }}
+<hr>
+    {% endfor %}
+{% endblock %}
+
+Далее для этой страницы мы создаем форму
+class PostCategoryForm(forms.ModelForm):
+    name = forms.CharField(label='Название', widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control'}))
+    tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(), widget=forms.CheckboxSelectMultiple())
+
+    class Meta:
+        model = Create
+        fields = ['name', 'text', 'tags', 'image', 'rating']  # Включаем все поля, кроме 'user' и 'category'
+
+Далее в виев добавляем эту форму
+from .forms import MashForm, PostCategoryForm
+
+Прописываем в классе функцию
+class CategoryDetailView(DetailView):
+    template_name = 'mashapp/category_detail.html'
+    model = Category
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context ['form'] = PostCategoryForm()
+        return context
+
+        Возращаемся к html категори
+
+{% extends 'base.html' %}
+{% block title %}
+
+{% endblock %}
+
+{% block content %}
+    <h1>{{ object.name }}</h1>
+    {% for post in object.category_posts.all %}
+    {{ post.name }}
+<hr>
+    {% endfor %}
+
+<form method = 'post'>
+    {% csrf_token %}
+    {{form.as_p}}
+    <button type="submit">Сохранить</button>
+
+
+</form>
+{% endblock %}
+
+
+Далее в виев создаем еще 1 класс
+class PostCategoryCreateView(CreateView):
+    model = Create
+    template_name = 'mashapp/category_create.html'
+    success_url = '/'
+    form_class = PostCategoryForm
+Идем в урл и добавляем
+path('post-category-create/<int:pk>', views.PostCategoryCreateView.as_view(), name='post-category-create')
+
+Возвращаемся в html category_detail и меняем форму
+<form method = 'post' action="{% url 'post_category_create' pk=object.pk %}">
+
+возращаемся в виев
+from django.shortcuts import get_object_or_404
+class PostCategoryCreateView(CreateView):
+    model = Create
+    template_name = 'mashapp/category_create.html'
+    success_url = '/'
+    form_class = PostCategoryForm
+    def post(self, request, *args, **kwargs):
+        self.category_pk = kwargs('pk')
+        return super().post(request, *args, **kwargs)
+    def form_valid(self, form):
+        user = self.request.user
+        form.instance.user = user
+        category = get_object_or_404 (Category, pk=self.category_pk)
+        form.instance.user.category = category
+        return super().form_valid(form)
+
+
+
+
+
+

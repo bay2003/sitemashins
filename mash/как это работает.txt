@@ -1,0 +1,794 @@
+Создаем в mashapp новую папку management
+Далее подпапку command
+Должны автоматически в 2 папках создаться файлы __unit__.py
+
+1 Создаем файл в command - допустим hello_commands. Создаем команды для открытия файла
+
+from django.core.management.base import BaseCommand
+from django.conf import settings берем данные из настроек
+import os используем функцию для направления
+class Command(BaseCommand):
+    def handle(self, *args, **options):
+        path = os.path.join(serrings.BASE_DIR, 'mashapp', 'management', 'command', 'file_savee', 'file.json') прописываем так путь
+        with open(path, 'w') as f: функция на открытие
+            pass
+
+        print("Hello")
+
+
+                    Создаем функция создания Постов
+1. Заходим во views.py И прописываем новую функцию
+def create(request):
+    return render(request, 'mashapp/create.html')
+Делам функцию пока пустую, что бы прописать в урлах и в страницах для перехода
+
+2. Заходим в урл модуля и прописываем ссылку на страницу
+path('create/', views.create, name='create')
+
+3. Заходим на страницы или base
+И прописываем ссылку на новую страницу <li class="nav-item"><a class="nav-link" href="{% url 'create' %}">Create</a></li>
+
+4. Создаем в папке где все html новый файл допустип create.html
+
+5. Прописываем в виев его путь
+def create_posts(request):
+    return render(request, 'mashapp/create.html')
+
+6. Дальше создаем модель для создания постов
+
+class Category(models.Model): тут создаем класс что бы вписать в модель
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+class Tag(models.Model): тут создаем класс что бы вписать в модель
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+class Create (models.Model):
+    name = models.CharField(max_length=32, unique=True)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+    tags = models.ManyToManyField('Tag')
+    image = models.ImageField(upload_to='create_images/', null=True, blank=True)
+
+    Не забыть сделать миграцию после добавления модели
+
+    python manage.py makemigrations
+python manage.py migrate
+
+7. Прописываем в forms эту модель
+class MashForm(forms.ModelForm):
+    class Meta:
+        model = Create
+        fields = '__all__' Т.е. все поля берем
+8. В виев делаем импорт
+from .forms import MashForm
+И прописываем ограничения
+def create(request):
+    if request.method == "GET":
+        form = MashForm()
+    return render(request, 'mashapp/create.html', context={'form': form})
+        else:
+        form = MashForm()
+    return render(request, 'mashapp/create.html', {'form': form})
+9. Затем переходим в html create
+
+Прописываем данные из base
+{% extends 'base.html' %}
+{% block content %}
+    <section class="py-5">
+        <div class="container px-5">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-8 col-xl-6">
+                    <h2 class="fw-bolder mb-5">Create something</h2>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+10. работа с табличкой
+Можем удалять поля для пользователя что бы не видел
+заходим в forms - форма таблчики
+exclude = ['tags',]
+
+Чтобы переименование название можем использовать
+name = forms.CharField(label='Название')
+text = forms.CharField(label='Описание')
+
+Что бы в графе прописать имя ну типа Название в пустой строке серым пример
+name = forms.CharField(label='Название', widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control'}))
+
+11. Наводим красоту в html
+
+{% for field in form %}
+                        <p>{{field.label_tag}}</p> можно прописать стили внизу
+
+                        <hr>
+                        {% for error in field.errors %}
+                        {{error}}
+                        {% endfor %}
+                        <p>{{field}}<p>
+                        {% endfor %}
+
+                        <p>{{field.label_tag}}</p>
+                        <div class="badge bg-gradient-primary-to-secondary text-white mb-4"><div class="text-uppercase">
+                            <div class="fs-3 fw-light text-muted"></div>
+12. Чек боксы вместо
+
+tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(), widget=forms.CheckboxSelectMultiple())
+
+
+
+
+Разрабатываем классы
+
+from django.views.generic import ListView, DetailView
+class TagListView(ListView):
+    model = Tag
+    template_name = 'tag_list.html' в вивев прописываем и создаем страницу там где все страницы
+
+Дальше прописываем url для новой страницы
+path('tag-list/', views.TagListView.as_view(), name='tag_list')  т.е. указываем ссылку на класс views.TagList.as_view()
+
+Дальше прописываем в странице html базы данных из base
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Список Тегов
+{% endblock %}
+
+
+{% block content %}
+
+{% endblock %}
+
+Дальше прописываем связь с данными
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Список Тегов
+{% endblock %}
+
+
+{% block content %}
+
+<ul>
+    {% for item in object_list %}
+    <li>
+        <a href="{% url 'tag_detail' pk=item.pk %}">
+        {{ item.name }}
+        </a>
+    </li>
+    {% endfor %}
+
+</ul>
+
+{% endblock %}
+
+    Т.е. мы взяли из модели теги данные
+
+
+Новое готовим детали этих тего
+
+Прописываем во вью
+class TagDetailView(DetailView):
+    model = Tag
+    template_name = 'mashapp/tag_detail.html'
+
+    Дальше так же прописываем урл
+    path('tag-detail/<int:pk>/', views.TagDetailView.as_view(), name='tag_detail')]
+    Базу
+
+Создание ТЭГОВ
+
+from django.views.generic import ListView, DetailView, CreateView
+
+class TagCreateView(CreateView):
+    fields = '__all__'
+    model = Tag
+    success_url = reverse_lazy ('tag_list')
+    template_name = 'mashapp/tag_create.html'
+
+    прописываем урл
+    path('tag-create/', views.TagCreateView.as_view(), name='tag-create')
+
+    tag list прописываем функцию создать
+
+     {% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Список Тегов
+{% endblock %}
+
+
+{% block content %}
+
+<ul>
+    {% for item in object_list %}
+    <li>
+        <a href="{% url 'tag_detail' pk=item.pk %}">
+        {{ item.name }}
+        </a>
+
+           </li>
+
+
+    {% endfor %}
+
+</ul>
+
+<a href="{% url 'tag_create' %}"> Создать новый тэг </a>
+
+{% endblock %}
+
+Дальше в созданном файле tag_create прописываем направления
+
+{% extends 'base.html' %}
+
+{% block title %}
+Создание
+{% endblock %}
+
+{% block content %}
+    <section class="py-5">
+        <div class="container px-5">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-8 col-xl-6">
+                    <h2 class="fw-bolder mb-5">Create something</h2>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }} направления
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+Обновления классов типа создания
+
+class TagUpdateView(UpdateView):
+    fields = '__all__'
+    model = Tag
+    success_url = reverse_lazy ('tag_list')
+    template_name = 'mashapp/tag_create.html'
+
+    path('tag-update/<int:pk>/', views.TagUpdateView.as_view(), name='tag_update')
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Список Тегов
+{% endblock %}
+
+
+{% block content %}
+
+<ul>
+    {% for item in object_list %}
+    <li>
+        <a href="{% url 'tag_detail' pk=item.pk %}">
+        {{ item.name }} /
+        </a>
+
+        <a href="{% url 'tag_update' pk=item.pk %}"> Изменить </a>
+
+           </li>
+
+
+    {% endfor %}
+
+</ul>
+
+<a href="{% url 'tag_create' %}"> Создать новый тэг </a>
+
+{% endblock %}
+
+Теперь как удалять
+
+class TagDeleteView(DeleteView):
+    template_name = 'mashapp/tag_delete_confirm.html'
+    model = Tag
+    success_url =  reverse_lazy ('tag_list')
+
+    {% extends 'base.html' %}
+{% block title %}
+    Тег: {{ object.name }}
+{% endblock %}
+
+{% block content %}
+    <h1>Тег: {{ object.name }}</h1>
+    <p>Дополнительная информация о теге здесь...</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger"> YES</button>
+</form>
+{% endblock %}
+
+
+path('tag-delete/<int:pk>/', views.TagDeleteView.as_view(), name='tag_delete')
+
+В листе
+/ <a href="{% url 'tag_delete' pk=item.pk %}"> /  Удалить </a>
+
+
+Настройки
+
+class TagListView(ListView):
+    model = Tag
+    template_name = 'tag_list.html'
+    context_object_name = 'tags' т.е. мы меняем везде object ну типа объекты на название
+
+ Меняем в листе
+ {% block content %}
+
+<ul>
+    {% for item in tags %}
+
+
+Передача параметров в контекст
+
+def get_queryset(self, *args, **kwargs):
+
+class TagListView(ListView):
+    model = Tag
+    template_name = 'tag_list.html'
+    context_object_name = 'tags'
+
+    def get_queryset(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['name'] = 'Список тэгов'
+        return context
+
+
+        В лист записываем направления на список тэгов
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <h1>{{ name }}</h1>
+
+    <ul>
+        {% for item in tags %}
+        <li>
+            <a href="{% url 'tag_detail' pk=item.pk %}">{{ item.name }}</a> /
+            <a href="{% url 'tag_update' pk=item.pk %}">Изменить</a> /
+            <a href="{% url 'tag_delete' pk=item.pk %}">Удалить</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'tag_create' %}"> Создать новый тэг </a>
+{% endblock %}
+
+Так же можем вывести такую форму в detail
+
+class TagListView(ListView):
+    model = Tag
+    template_name = 'tag_list.html'
+    context_object_name = 'tags'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['name'] = 'Список тэгов'
+        return context
+
+в html detail
+{% extends 'base.html' %}
+{% block title %}
+    Тег: {{ object.name }}
+{% endblock %}
+
+{% block content %}
+    <h1>{{ name }}</h1>
+    <h1>Тег: {{ tags }}</h1>
+    <p>Дополнительная информация о теге здесь...</p>
+{% endblock %}
+
+
+
+ЕСЛИ НЕОБХОДИМО ВЫТАЩИТЬ КОНКРЕТНЫЕ ДАННЫЕ
+
+views list
+    def get_queryset(self):
+        return Tag.objects.all() это все можно поставить вмесето all конкретный
+
+    def get_object(self, queryset=None):
+        return Tag.objects.get()
+        Это выдает 1 объект
+
+
+РАЗБИРАЕМ МИКСИНЫ
+
+from django.views.generic.base import ContextMixin  в виев
+отвечает за работу контекста
+
+class NameContextMixin (ContextMixin):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['name'] = 'Список тэгов'
+        return context
+        Мы забрали данные из
+        class TagListView(ListView, ContextMixin):
+    model = Tag
+    template_name = 'tag_list.html'
+    context_object_name = 'tags'
+
+
+    def get_queryset(self):
+        return Tag.objects.all()
+
+        Т.е. настраиваем шаблон
+
+        Дальше прописываем, эти шаблоны в классы
+        class TagCreateView(CreateView, ContextMixin): и т.д.
+
+ТИПЫ НАСЛЕДОВАНИЯ В МОДЕЛЯХ
+АБСТРАКТНЫЕ И КЛАССИЧЕСКИЕ
+
+class TimeStamp (models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    class Meta:
+        abstract = True
+
+        Это создание модели, для нее не создаются новые таблицы
+        данные храняться в каждом наследнике
+class Post(TimeStamp): прописываем наследование
+
+Тогда получается удаляем лишнее class Post(TimeStamp):
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    image = models.ImageField(upload_to='post_images/', null=True, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('view_post', args=[str(self.id)])
+
+По сути это миксин просто передача данных
+
+
+КЛАССИЧЕСКОЕ НАСЛЕДОВАНИЕ
+
+
+
+СОЗДАНИЯ СПЕЦИАЛЬНЫХ КАТЕГОРИЙ В АДМИНКЕ
+
+class Meta:
+    verbose_name = 'category'
+    ЗАГРУЗИТЬ В МОДЕЛИ
+    class Meta:
+    verbose_name = 'category' единственное число
+
+    verbose_name_plural = 'categories' множественное число
+
+    ЧТО БЫ ПЕРЕИМЕНОВАТЬ ЗНАЧЕНИЯ
+
+    class Post(TimeStamp):
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100, verbose_name="Заголовок") тут добавили значения в админ панели
+    content = models.TextField()
+    image = models.ImageField(upload_to='post_images/', null=True, blank=True)
+
+
+    СОЗДАЕМ ВОЗМОЖНОСТЬ РЕГИСТРАЦИИ ПОЛЬЗОВАТЕЛЕЙ
+
+    from django.contrib.auth.models import User ПРОПИСЫВАЕМ В МОДЕЛИ
+
+class Post(TimeStamp):
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100, verbose_name="Заголовок")
+    content = models.TextField()
+    image = models.ImageField(upload_to='post_images/', null=True, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('view_post', args=[str(self.id)])
+
+    user = models.ForeignKey(User) Тем самым при создание поста прописывается конкретный пользователь
+
+    СОЗДАЕМ ПРИЛОЖЕНИЕ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЯМИ
+    В консоли - треминале прописываем
+    python manage.py startapp usersapp
+    Т.е. мы создали отдельный модуль типа mashapp
+
+    Дальше в новом проекте userapp/models
+    прописываем команды
+    from django.db import models
+from django.contrib.auth.models import AbstractUser мы прописываем абстракт ка шаблон для всех последующих
+
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from mash.usersapp.models import BlogUser
+from django.conf import settings
+
+class BlogUser(AbstractUser):
+    email = models.EmailField(unique=True) здесь назначаем уникальный емали
+
+    is_aurhor = models.BooleanField(default=False) здесь даем права как автору
+
+ ПРОПИСЫВАЕМ В НАСТРОЙКАХ ОБЩИЙ СЕТИНГ
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/tmp/emails'
+
+AUTH_USER_MODEL = 'usersapp.MashUser'
+ПЕРЕНАЗНАЧЕНИЕЯ МОДЕЛИ ПОЛЬЗОВАТЕЛЯ
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'mashapp', 'usersapp', не забыть прописать модель
+
+    ТЕПЕРЬ ПРОПИСЫВАЕМ В ПОСТЫ
+
+    class Post(TimeStamp):
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100, verbose_name="Заголовок")
+    content = models.TextField()
+    image = models.ImageField(upload_to='post_images/', null=True, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('view_post', args=[str(self.id)])
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    ЗАТЕМ НУЖНО УДАЛИТЬ БАЗУ ДАННЫХ ИНАЧЕ БУДЕТ ОШИБКА
+    DB.SQLITE3
+
+    ЗАТЕМ УДАЛЯЕМ ВСЕ МИГРАЦИИ - MIGRATE
+
+    ЗАНОВО ДЕЛАЕМ MAKE MIGR AND MIGRA
+
+    from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class BlogUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    is_aurhor = models.BooleanField(default=False)
+
+# Create your models here.
+
+AUTH_USER_MODEL = 'usersapp.BlogUser' settin
+
+from usersapp.models import BlogUser model/mashapp
+
+
+ДАЛЬШЕ СОЗДАЕМ АДМИНА
+python manage.py createsuperuser
+
+РЕГИСТРИРУЕМ ПОЛЬЗОВАТЕЛЬ В АДМИН ПАНЕЛИ
+from .models import BlogUser
+
+Меняем строчку в модели маш
+
+from usersapp.models import BlogUser
+Т.е. на созданную в юзерс
+
+В посте маш так же прописываем путь
+
+  user = models.ForeignKey(BlogUser, on_delete=models.CASCADE)
+
+Затем нужно сделать миграцию, т,к. внесли в модели изменения
+make and migra
+
+Если выдает ошибку
+user = models.ForeignKey(BlogUser, on_delete=models.CASCADE, null=True, blank=True)
+Но нужно быть уверенным что нет данных, новых пользователей и т.д. ТИПА ОБХОДНОЙ ПУТТЬ
+
+ЗАТЕМ СНОСИМ on_delete=models.CASCADE, null=True, blank=True
+
+И ЗАНОВО МИГРАЦИИ, ВЫДАЕТ ОШИБКУ И СТАВИШЬ 2 Т.Е. ПОДВЕРЖДАЕШЬ ЧТО ТАМ НЕТ ДАННЫХ
+
+
+НАСТРОЙКА ВИЕВ В ЮЗЕРАХ, ЧТО БЫ ВЕРНО ОТОБРАЖАЛОСЬ
+from django.shortcuts import render
+from django.contrib.auth.views import LoginView
+
+class UserLoginView(LoginView):
+    template_name = 'usersapp/login.html'
+
+
+Саздаем папку темплате в юзерапп templates и в ней же подпапку usersapp. Далее html что бы тображался на сайте login.html
+
+Затем прописываем адрес url создаем файл urls в юзерапп основной и прописываем с виев
+from django.urls import path
+from usersapp import views
+
+app_name = 'usersapp'
+
+urlpatterns = [
+    path('login/', views.UserLoginView.as_view(), name='login'),]
+
+Дальше в основных урл в категории маш прописываем это направление
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('mashapp.urls')),
+    path('users/', include('usersapp.urls', namespace='users'))]
+
+Дальше идем в базовый шаблон и добавляем новую страницу логин
+    <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">логины</a></li>
+
+прописывем хтмл логина
+
+{% extends 'base.html' %} это из базы подтягиваем
+{% block title %} ну и типа титл
+Логин
+{% endblock %}
+
+{% block content %} это из базы подтягиваем
+<form method="post"> это берем данные из поста
+    {% csrf_token %} без этого не пройдет
+    {{form.as_p}} этим мы рисуем форму из вью
+    <button type="submit">Войти</button> ну что бы нажать
+</form>
+{% endblock %}
+
+идем в настройки общие и прописываем путь к логинам и паролям
+LOGIN_REDIRECT_URL = '/' КУДА ИДТИ ПОСЛЕ ЛОГИНА
+LOGOUT_REDIRECT_URL = '/' КУДА ИДТИ ПОСЛЕ ВЫХОДА
+LOGIN_URL = '/users/login/' куда идти на логин
+
+
+Дальше прописывем в url usersapp
+
+from django.contrib.auth.views import LogoutView
+
+path('logout/', views.logout_view, name='logout'),
+
+
+Это нужно что бы передать пользователя и перешел в свое окно
+
+
+В виев прописываем функцию
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+
+def logout_view(request):
+    logout(request)
+    # После выхода пользователя перенаправляем на страницу, где он может войти заново или на другую страницу, например, на главную.
+    return redirect('index')  # Здесь 'home' - это имя URL-шаблона, на который вы хотите перенаправить пользователя после выхода.
+
+
+# Create your views here.
+
+
+
+
+Ну и как обычно прописываем новый путь в base
+
+<li class="nav-item"><a class="nav-link" href="{% url 'users:logout' %}">Выход</a></li>
+
+СОЗДАНИЕ ПОЛЬЗОВАТЕЛЕЙ
+
+В юзерс создаем файл forms и прописываем алгоритм
+from django.contrib.auth.forms import UserCreationForm
+from .models import BlogUser
+
+class RegistrationForm(UserCreationForm):
+    class Meta:
+        model = BlogUser
+        fields = ('username', 'password1', 'password2', 'email')
+
+ дальше прописывем в виев юзерс
+from .forms import RegistrationForm
+from django.views.generic import CreateView, UpdateView, DeleteView
+from .models import BlogUser
+from django.urls import reverse_lazy
+
+class UserCreateView(CreateView):
+    model =BlogUser
+    template_name = 'usersapp/register.html'
+    form_class = RegistrationForm
+    success_url = reverse_lazy ('users:login')
+
+
+Создаем в юзер темла новый html register
+
+Ну и прописываем урлы в юзерах
+path('register/', views.UserCreateView.as_view(), name='register')
+
+Ну и в базе
+<li class="nav-item"><a class="nav-link" href="{% url 'users:register' %}">Выход</a></li>
+
+Прописываем html registr
+
+{% extends 'base.html' %}
+{% block title %}
+Регистрация
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button type="submit">Войти</button>
+</form>
+{% endblock %}
+
+ЧТО БЫ ССЫЛКИ БЫЛИ ДОСТУПНЫ ОПРЕДЕЛЕННЫМ ПОЛЬЗОВАТЕЛЯМ
+<li class="nav-item">Привет, {{user.username}}<a class="nav-link" href="{% url 'users:logout' %}"> Выход</a></li>
+Т.е. над кнопокой будет обращение
+
+Если в базе прописать
+
+  {% if user.is_authenticated %} Если пользователь не зашел в учетку Показывают только вход и регистрацию, но если вошел только выход
+                        <li class="nav-item">Привет, {{ user.username }}<a class="nav-link" href="{% url 'users:logout' %}"> Выход</a></li>
+                        {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Вход</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'users:register' %}">Регистрация</a></li>
+                        {% endif %}
+
+
+  ГОТОВИМ ПОСТЫ ПОЛЬЗОВАТЕЛЯМИ
+
+  Сначала прописываем в модель маш среате
+  user = models.ForeignKey(BlogUser, on_delete=models.CASCADE) Т.е. связь с пользователем
+Т.е. теперь можем выбирать пользователя
+
+Что бы не выводил всех пользователей нужно зайти в формс машапп
+    class Meta:
+        model = Create
+        exclude = ['user',] Сдесь делаем ограничения кроме юзера
+
+        # fields = '__all__' удаляем
+
+СОЗДАЕМ ОГРАНИЧЕНИЯ КТО МОЖЕТ СОЗДАТЬ ЧТО ЛИБО ПОСТ ТЭГИ И Т.Д.
+
+ВАЖНО LoginRequiredMixin идти первым
+
+class TagCreateView(LoginRequiredMixin, CreateView, NameContextMixin): мы добавили логином ограничения
+    fields = '__all__'
+    model = Tag
+    success_url = reverse_lazy('tag_list')
+    template_name = 'mashapp/tag_create.html'
+
+    def form_valid(self, form):
+        return super().form_valid(form)
+
+
+ЕСЛИ ХОТИМ ОГРАНИЧИТЬ ДОСТУП К ПОСТАМ ДОПУСТИМ АДМИНА
+ВО ВЬЮ МАШ ПИШЕМ
+from django.contrib.auth.decorators import login_required, user_passes_test
+
+@user_passes_test(lambda u: u.is_superuser)
+def projects(request):
+    return render(request, 'mashapp/projects.html')
+    Т.е. только админ может зайти на эту страницу
+
+ЕСЛИ КАКИЕ КОКРЕТНЫЕ ЧАСТИ РАЗДЕЛА А НЕ ПОЛНОСТЬ views
+from django.contrib.auth.mixins import UserPassesTestMixin
+class TagDetailView(UserPassesTestMixin, DetailView, NameContextMixin):
+    model = Tag
+    template_name = 'mashapp/tag_detail.html'
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+
+
+
+
+
+

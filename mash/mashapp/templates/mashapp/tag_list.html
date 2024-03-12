@@ -1,0 +1,42 @@
+
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <h1>{{ name }}</h1>
+
+    <ul>
+        {% for item in tags %}
+        <li>
+            <a href="{% url 'tag_detail' pk=item.pk %}">{{ item.name }}</a> /
+            <a href="{% url 'tag_update' pk=item.pk %}">Изменить</a> /
+            <a href="{% url 'tag_delete' pk=item.pk %}">Удалить</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'tag_create' %}"> Создать новый тэг </a>
+
+        <div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ page_obj.previous_page_number }}">Предыдущая страница</a>
+                    {% endif %}
+                </span>
+                <span class="current">
+                    <h3>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.</h3>
+                </span>
+                <span class="step-links">
+                    {% if page_obj.has_next %}
+                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="?page={{ page_obj.next_page_number }}">Следующая страница</a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
