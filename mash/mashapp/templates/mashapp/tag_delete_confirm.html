@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}
+    Тег: {{ object.name }}
+{% endblock %}
+
+{% block content %}
+    <h1>Тег: {{ object.name }}</h1>
+    <p>Дополнительная информация о теге здесь...</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger"> YES</button>
+</form>
+{% endblock %}

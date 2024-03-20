@@ -1,0 +1,62 @@
+БУДЕМ ТЕСТИРОВАТЬ КОД
+
+В модели мы прописываем условия на проверку картинке
+class Create(TimeStamp):
+    def has_image(self):
+        return self.image is not None
+
+Теперь идем в хтмл индекс
+
+И прописываем туда модель
+<!-- Post links -->
+       <div class="container">
+        <div class="row">
+            <div class="col">
+                <h2 class="fw-bolder mb-5">Список постов:</h2>
+                <ul>
+                    {% for post in posts %}
+                        <li><a href="{{ post.get_absolute_url }}">{{ post.title }}
+                            {% if item.has_image %}
+                            Есть картинка
+                        {% else %}
+                            Нет картинки
+                            {% endif %}
+                        </a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+Еще в моделях можем прописать
+
+    def some_methods(self):
+        return "hello"
+Это возвращает сообщение
+
+Так же прописываем в хтмл
+
+
+ВСЕГДА ЛУЧШЕ ПРОПИСЫВАТЬ В МОДЕЛЯХ ВСЕ ЛОГИКИ
+
+
+БУДЕМ ТЕСТИРОВАТЬ КОД
+
+from django.test import TestCase
+from .models import Create, Category, Post
+from mash.usersapp.models import BlogUser
+
+class PostTest(TestCase):
+    def test_has_image(self):
+        category = Category.objects.create(name='test_category1')
+        user = BlogUser.objects.create_user(username='test_user', email='sek@sek.ru', password='12345678')
+        post = Post.objects.create(name='test_post1', text = 'some', user = user, category = category )
+        self.assertFalse(post.has_image())
+
+# Create your tests here.
+
+потом в терминале
+python manage.py test
+
+
+
