@@ -1,0 +1,64 @@
+можно использовать сторонние библиотеки - уже готовые модули, ну примерно корзина для магазина, работа с изображениями
+
+Как пример, устанавливаем
+
+pip install django-cleanup
+
+Добавляем эту бибилиотеку в настройки setting основные  INSTALLED_APPS 'django_cleanup.apps.CleanupConfig' он должен быть самым последним в записи
+
+Т.е. установили модуль, что бы картинки очищалис
+
+
+Подключения АПИ и врейсворка
+
+pip install djangorestframework
+pip install markdown
+pip install django-filter
+
+Дальше в настройки так же добавляем
+INSTALLED_APPS
+'rest_framewokr'
+
+Дальше даем право в урлах заходить с апи (урлы основные)
+path('api/', include('rest_framework.urls'))]
+
+Так же прописываем маршруты
+from rest_framework import routers
+from mash.mashapp.api_views import CategoryViewSet
+
+router = routers.DefaultRouter()
+router.register(r'users', CategoryViewSet)
+
+Прописываем права для использования АПИ в настройках общих
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+REST_FRAMEWORK = {'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly']}
+
+Дальше в нашей модели маш/машапп создаем новый файл serializers.py
+туда добавляем
+
+
+from django.urls import path, include
+from .models import Category
+from rest_framework import routers, serializers, viewsets
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+Дальше делаем отдельный файл, который будет отвечать за изображение АПИ api_views.py
+
+Туда загоняем
+from .models import Category
+from .serializers import CategorySerializer
+from rest_framework import viewsets, routers, serializers
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+
+
+
+
